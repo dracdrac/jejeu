@@ -25,7 +25,7 @@
         // PAGES
 
         "page_jeu" => "
-            <h2 class='jeu'>{{nom}}</h2>
+            <a href='jeu.php?id={{id}}'><h2 class='jeu'>{{nom}}</h2></a>
             <p class='descriptioncourte'>{{description_courte}}</p>
             <div class='descriptionlongue'>
             {{description_longue}}
@@ -35,13 +35,21 @@
         ",
 
         "page_etiquette" => "
-            <h2 class='etiquette'>{{nom}}</h2>
+            <a href='etiquette.php?id={{id}}'><h2 class='etiquette'>{{nom}}</h2></a>
             <p class='descriptioncourte'>{{description_courte}}</p>
             <div class='descriptionlongue'>
             {{description_longue}}
             </div>
             <p>Les jeux auxquels cette etiquette est attachée :</p>
             {{liste_jeux}}
+        ",
+
+        "page_article" => "
+            <h2 class='etiquette'>{{nom}}</h2>
+            <p class='descriptioncourte'>{{description_courte}}</p>
+            <div class='descriptionlongue'>
+            {{description_longue}}
+            </div>
         ",
 
         // LIST HELPERS
@@ -82,6 +90,11 @@
 
         "lien_etiquette" => "
         <a href='etiquette.php?id={{id}}' class='etiquette'>{{nom}}</a>
+        <span class='descriptioncourte'>{{description_courte}}</span>
+        ",
+
+        "lien_article" => "
+        <a href='article.php?id={{id}}' class='article'>{{nom}}</a>
         <span class='descriptioncourte'>{{description_courte}}</span>
         ",
 
@@ -135,6 +148,29 @@
             'nom' => 'Méga cool',
             'description_courte' => 'Des jeux vraiment au top !',
             'description_longue' => "Il y a des jeux bofs et des jeux **vraiments super cool**. Cette etiquette est pour les jeux de la deuxième catégorie."
+            ),
+
+        "article_formulaire" => "
+        <h2>Creer/modifier article</h2> 
+        <form action='admin.php?action=nouvelarticle&id={{id}}&submit' method='post'>
+            <label>Nom:</label>
+            <input type='text' name='nom' value='{{nom}}' size='50'>
+            <label>Description courte: </label>
+            <input type='text' name='description_courte' value='{{description_courte}}' size='100'>
+            <label>Description longue: </label>
+            <textarea name='description_longue' id='description_longue'>{{description_longue}}</textarea>
+            <script type='text/javascript'>
+                var editor = new Editor({element: document.getElementById('description_longue')});
+                editor.render();
+            </script>
+            <input type='submit' value='Je valide !'>
+        </form> 
+        ",
+
+        "sample_article" => array(
+            'nom' => 'Faut-il abandonner ?',
+            'description_courte' => 'L\'abandon est-il fairplay ?',
+            'description_longue' => "Alors je dirai à la fois oui et non. En fait ça dépend."
             ),
         // DIVERS
 
