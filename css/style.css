@@ -2,24 +2,21 @@ body{
     margin:0;
     height:100vh;
     background-attachment: fixed;
-    font-family: 'Avara_Bold Italic';
-}
-*{
-    
-    
-
+    font-family: 'Avara_Bold';
 }
 
 
 a {
-    color: #555;
-    text-decoration-style: wavy;
+    text-decoration-style: solid;
+    color:black;
 }
 a:hover {
-    color: #CCC;
+    text-decoration-style: wavy;
+    /*
+    transform: rotate(5deg);
+*/
 }
 a:active {
-    color: #000;
 
 }
 
@@ -33,8 +30,7 @@ ul {
 
 
 #footer, #header, .descriptionlongue {
-    background: rgba(255, 255, 255, 0.9);
-    border: 0 dashed #EEE;
+    border: 0 dashed #000;
     width:100%;
 
 
@@ -45,22 +41,22 @@ ul {
 #header, .descriptionlongue {
     border-bottom-width:  1px ;
 }
-
+/*
 #footer, #header {
     width:100%;
     position: fixed ;
-}
+}*/
 #header {
     top: 0;
-    font-size: 10pt;
+    font-size: small;
 }
 #header h1{
-    font-size: 10pt;
+    font-size: small;
     display: inline;
 }
 
 #footer{
-    font-size: 7pt;
+    font-size: x-small;
     bottom: 0;
 }
 
@@ -84,33 +80,35 @@ ul {
 
 
 #content {
-    margin:auto;
+    margin: 120px auto;
     padding:10px;
-    margin-top: 120px;
     max-width: 800px;
+    min-height: calc(100% - 320px);
+    
 }
 
-#content>h2{
+#content>h2, #content>a>h2{
     font-weight:normal;
-    font-size: 40px;
+    font-size: 64pt;
     text-align: center;
+    margin-bottom: 30px;
 }
 
 .descriptionlongue {
-  /*  max-width: 800px;
-   */
+  margin: 30px 0;
+  padding: 20px 0;
 
 }
 
 .descriptionlongue h1{
-    font-size: 16pt;
+    font-size: x-large;
 }
 .descriptionlongue h2{
-    font-size: 12pt;
+    font-size: large;
    margin-bottom: 0px;
 }
-.descriptionlongue h3{
-    font-size: 10pt;
+.descriptionlongue h3, .descriptionlongue h4, .descriptionlongue h5{
+    font-size: normal;
    margin-bottom: 0px;
 }
 .jeu, .etiquette {
@@ -118,9 +116,10 @@ ul {
 }
 .descriptioncourte 
 {
-    font-size: small;
+    font-size: large;
     font-style: italic;
     margin:5px;
+    text-align: center;
 }
 label {
     display: block;
@@ -138,7 +137,7 @@ label {
 .bddlist ul {
     display: flex;
     flex-wrap: wrap;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
     padding: 0;
 }
@@ -147,8 +146,9 @@ label {
     display: inline-block;
     width:auto;
     margin:10px;
-    border-style:solid;
     padding: 10px;
+    text-align: center;
+    
 
 
 }
@@ -157,7 +157,8 @@ label {
 }
 .bddlist li a{
     display: block;
-    text-align: center;
+    margin: 5px;
+    font-size: x-large;
 }
 /*
 

@@ -5,9 +5,11 @@
 
 ?>
     <h2>Tous les jeux</h2>
-
-<?php    
+    <div class='bddlist'>
+<?php
     echo affiche_liste_jeux();
-
+?>
+</div>
+<?php
     require_once $config['paths']['template'] . "/footer.php";
 ?>

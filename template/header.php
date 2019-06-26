@@ -3,7 +3,9 @@
 <head>
     <title>JeJeu</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/webfonts/font.css">
 
     <link rel="stylesheet" href="http://lab.lepture.com/editor/editor.css" />
 <script type="text/javascript" src="http://lab.lepture.com/editor/editor.js"></script>
@@ -22,4 +24,4 @@
     </ul>
 
     </div>
-    <div id="body">
+    <div id="content">

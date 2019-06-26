@@ -31,7 +31,7 @@
             {{description_longue}}
             </div>
             <p>Les etiquettes attachées à ce jeu :</p>
-            {{liste_etiquettes}}
+            <div class='bddlist'>{{liste_etiquettes}}</div>
         ",
 
         "page_etiquette" => "
@@ -41,7 +41,8 @@
             {{description_longue}}
             </div>
             <p>Les jeux auxquels cette etiquette est attachée :</p>
-            {{liste_jeux}}
+
+            <div class='bddlist'>{{liste_jeux}}</div>
         ",
 
         "page_article" => "

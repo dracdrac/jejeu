@@ -14,8 +14,10 @@
             }
         ?>
     </ul>
-            <p style="font-weight:bold;color:white;background:red;text-align: center;">/!\ ATTENTION /!\ TRAVAIL EN COURS. Très instable. Ne pas partager. bisou</p>
-
+<!--             <p style="font-weight:bold;color:white;background:red;text-align: center;">/!\ ATTENTION /!\ TRAVAIL EN COURS. Très instable. Ne pas partager. bisou</p>
+ -->
 </div>
 </body>
+<script type="text/javascript" src="js/colors.js"></script>
+
 </html>
