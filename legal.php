@@ -1,12 +1,10 @@
 <?php    
     $config = include('config.php');
     require_once $config['paths']['template'] . "/header.php";
+    require_once $config['paths']['lib'] .  '/jeux.php';
 
-?>
-    <h2>Mentions légales</h2>
-    <p>Alors alors...</p>
+    echo affiche_page_article(3);
+    $lien_modifier = "admin.php?action=modifierarticle&id=3";
 
-<?php    
-
-    require_once $config['paths']['template'] . "/header.php";
+    require_once $config['paths']['template'] . "/footer.php";
 ?>

@@ -9,6 +9,7 @@
     <ul class="nav">
       <li><a href="admin.php?action=nouveaujeu">Nouveau jeu</a></li>
       <li><a href="admin.php?action=nouvelleetiquette">Nouvelle etiquette</a></li>
+      <li><a href="admin.php?action=nouvelarticle">Nouvel article</a></li>
       <li><a href="admin.php?action=modifier">Modifier / Suprimer</a></li>
     </ul>
 <?php
@@ -22,6 +23,9 @@
       elseif ($_GET['action'] == 'nouveaujeu') {
         echo affiche_jeu_formulaire();
       }
+      elseif ($_GET['action'] == 'nouvelarticle') {
+        echo affiche_article_formulaire();
+      }
       elseif ($_GET['action'] == 'modifier') {
         echo affiche_liste_modifier_suprimer();
       }
@@ -30,6 +34,9 @@
       }
       elseif ($_GET['action'] == 'modifieretiquette') {
         echo affiche_etiquette_formulaire($_GET['id']);
+      }
+      elseif ($_GET['action'] == 'modifierarticle') {
+        echo affiche_article_formulaire($_GET['id']);
       }
     }
   }

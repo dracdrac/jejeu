@@ -30,12 +30,18 @@ function connection()
 
 
 // Affiche une page de jeu
-function affiche_page_jeu($id)
+function affiche_page_jeu($id=NULL)
 {
     $config = include('config.php');
-
-    $req = connection()->prepare('SELECT *  FROM jejeu_jeux WHERE id=?');
-    $req->execute(array($id));
+    
+    if(! isset($id)){
+        $req = connection()->prepare('SELECT *  FROM jejeu_jeux ORDER BY RAND() LIMIT 1');
+        $req->execute();
+    }
+    else {
+        $req = connection()->prepare('SELECT *  FROM jejeu_jeux WHERE id=?');
+        $req->execute(array($id));
+    }
 
     if ($donnees = $req->fetch())
     {   
@@ -73,6 +79,30 @@ function affiche_page_etiquette($id)
         // Formate et affiche la page
         $req->closeCursor(); 
         return formatString($config['templates']['page_etiquette'], $donnees);
+    } else {
+        // affiche une erreur
+        $req->closeCursor(); 
+        return $config['templates']['inexistant'];
+    }
+
+}
+
+// Affiche une page d'article
+function affiche_page_article($id)
+{
+    $config = include('config.php');
+
+    $req = connection()->prepare('SELECT *  FROM jejeu_articles WHERE id=?');
+    $req->execute(array($id));
+
+    if ($donnees = $req->fetch())
+    {   
+        // Parse la description longue (markdown)
+        $Parsedown = new Parsedown();
+        $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
+        // Formate et affiche la page
+        $req->closeCursor(); 
+        return formatString($config['templates']['page_article'], $donnees);
     } else {
         // affiche une erreur
         $req->closeCursor(); 
@@ -144,6 +174,29 @@ function affiche_liste_etiquettes($jeu_id=NULL)
     {   
         // Formate et ajoute l'element
         $lien = formatString($config['templates']['lien_etiquette'], $donnees);
+        $elements .= formatString($config['templates']['li'], ['element' => $lien]);
+    }
+    $req->closeCursor(); 
+
+    // Formate et affiche la liste
+    return formatString($config['templates']['ul'],['elements' => $elements]);
+
+}
+
+// Affiche la liste des articles
+function affiche_liste_articles()
+{
+    $config = include('config.php');
+    $req = connection()->prepare('
+        SELECT nom, id, description_courte
+        FROM jejeu_articles');
+    $req->execute();
+
+    $elements = "";
+    while ($donnees = $req->fetch())
+    {   
+        // Formate et ajoute l'article
+        $lien = formatString($config['templates']['lien_article'], $donnees);
         $elements .= formatString($config['templates']['li'], ['element' => $lien]);
     }
     $req->closeCursor(); 
@@ -296,6 +349,9 @@ function affiche_etiquette_formulaire($id=NULL)
         $donnees = $config['templates']['sample_etiquette'];
     }
 
+    $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
+    $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
+
 
     $donnees['check_jeux'] = affiche_check_jeux($id);
     $donnees['id'] = $id;
@@ -323,10 +379,40 @@ function affiche_jeu_formulaire($id=NULL)
         $donnees = $config['templates']['sample_jeu'];
     }
 
+    $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
+    $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
+
     $donnees['check_etiquettes'] = affiche_check_etiquettes($id);
     $donnees['id'] = $id;
 
     return formatString($config['templates']['jeu_formulaire'], $donnees);
+}
+
+
+// Affiche un formulaire d'etiquette
+function affiche_article_formulaire($id=NULL)
+{
+    $config = include('config.php');
+    if (isset($id)){
+        $req = connection()->prepare('
+            SELECT id, nom, description_courte, description_longue
+            FROM jejeu_articles
+            WHERE id=?
+            ');
+        $req->execute(array($id));
+        $donnees = $req->fetch();
+        $req->closeCursor(); 
+    }
+    else{
+        $donnees = $config['templates']['sample_article'];
+    }
+
+    $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
+    $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
+
+    $donnees['id'] = $id;
+
+    return formatString($config['templates']['article_formulaire'], $donnees);
 }
 
 
@@ -335,6 +421,8 @@ function affiche_liste_modifier_suprimer()
 {
     $config = include('config.php');
     $db = connection();
+
+    // ETIQUETTES
     $req = $db->prepare('
         SELECT id, nom, description_courte
         FROM jejeu_etiquettes
@@ -353,7 +441,7 @@ function affiche_liste_modifier_suprimer()
     }
     $req->closeCursor(); 
 
-
+    // JEUX
     $req = $db->prepare('
     SELECT id, nom, description_courte
     FROM jejeu_jeux
@@ -372,9 +460,31 @@ function affiche_liste_modifier_suprimer()
     }
     $req->closeCursor(); 
 
+    // ARTICLES
+    $req = $db->prepare('
+    SELECT id, nom, description_courte
+    FROM jejeu_articles
+    ');
+    $req->execute();
+
+    $articles = "";
+    while ($donnees = $req->fetch())
+    {   
+        // Formate et ajoute l'element
+        $tplt = $config['templates']['lien_article'];
+        $tplt .= ' <a href=admin.php?action=suprimerarticle&id={{id}}&submit>SUPRIMER</a> ';
+        $tplt .= ' <a href=admin.php?action=modifierarticle&id={{id}}>MODIFIER</a> ';
+        $lien = formatString($tplt, $donnees);
+        $jeux .= formatString($config['templates']['li'], ['element' => $lien]);
+    }
+    $req->closeCursor(); 
+
     // Formate et affiche la liste
 
-    return 'jeux:' . formatString($config['templates']['ul'],['elements' => $jeux]) .'etiquettes:'. formatString($config['templates']['ul'],['elements' => $etiquettes]);
+    $listes = 'jeux:' . formatString($config['templates']['ul'],['elements' => $jeux]) ;
+    $listes .= 'etiquettes:'. formatString($config['templates']['ul'],['elements' => $etiquettes]);
+    $listes .= 'articles:'. formatString($config['templates']['ul'],['elements' => $articles]);
+    return $listes;
 }
 
 
@@ -392,6 +502,9 @@ function submit($action, $p)
     $db = connection();
 
     if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+
+        // SUPRIMER /////////////
+        // jeu
         if($action == 'suprimerjeu'){
             $req = $db->prepare('
                 DELETE FROM  jejeu_jeux
@@ -400,6 +513,7 @@ function submit($action, $p)
             $req->execute(array($_GET['id']));
             echo "Bye bye le jeu numéro " . $_GET['id'];
         }
+        // etiquette
         elseif($action == 'suprimeretiquette'){
             $req = $db->prepare('
                 DELETE FROM  jejeu_etiquettes
@@ -409,6 +523,18 @@ function submit($action, $p)
             echo "Bye bye l'etiquette numéro " . $_GET['id'];
 
         }
+        // article
+        elseif($action == 'suprimerarticle'){
+            $req = $db->prepare('
+                DELETE FROM  jejeu_articles
+                WHERE id=?
+                ');
+            $req->execute(array($_GET['id']));
+            echo "Bye bye l'article numéro " . $_GET['id'];
+
+        }
+        // MODIFIER /////////////
+        // jeu
         elseif($action == 'nouveaujeu'){
             // modifier
             $req = $db->prepare('
@@ -442,6 +568,7 @@ function submit($action, $p)
             echo "J'ai l'impression que la modif a bien eu lieu..";
 
         }
+        // etiquette
         elseif($action == 'nouvelleetiquette'){
             // modifier
             $req = $db->prepare('
@@ -463,22 +590,39 @@ function submit($action, $p)
             $req->execute(array($_GET['id']));
             // recreer etiquetttes/jeux relations
             if(isset($p['jeux'])){
-            foreach ($p['jeux'] as $id_jeu) {
-                $req =connection()->prepare('
-                    INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
-                    VALUES(:id_etiquette, :id_jeu)');
-                $req->execute(array(
-                    'id_etiquette' => $_GET['id'],
-                    'id_jeu' => $id_jeu));
+                foreach ($p['jeux'] as $id_jeu) {
+                    $req =connection()->prepare('
+                        INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
+                        VALUES(:id_etiquette, :id_jeu)');
+                    $req->execute(array(
+                        'id_etiquette' => $_GET['id'],
+                        'id_jeu' => $id_jeu));
+                }
+                echo "J'ai l'impression que la modif s'est bien passée..";
+
             }
-            echo "J'ai l'impression que la modif s'est bien passée..";
-
         }
-
+        // article
+        elseif($action == 'nouvelarticle'){
+            // modifier
+            $req = $db->prepare('
+                UPDATE  jejeu_articless
+                SET description_longue = :description_longue, nom = :nom, description_courte= :description_courte
+                WHERE id=:id
+                ');
+            $req->execute(array(
+                'id' => $_GET['id'],
+                'nom' => $p['nom'],
+                'description_courte' => $p['description_courte'],
+                'description_longue' => $p['description_longue']
+                ));
         }
  
 
     }
+    // NOUVEAU //////////////////////////
+
+    //jeu
     elseif ($action == 'nouveaujeu') {
         $req =$db->prepare('
             INSERT INTO jejeu_jeux(nom, description_courte, description_longue)
@@ -502,6 +646,7 @@ function submit($action, $p)
         }
         echo "Ça a l'air de s'être bien passé";
     }
+    //etiquette
     elseif ($action == 'nouvelleetiquette') {
         $req =$db->prepare('
             INSERT INTO jejeu_etiquettes(nom, description_courte, description_longue)
@@ -522,6 +667,18 @@ function submit($action, $p)
                     'id_jeu' => $id_jeu));
             }
         }
+        echo 'Je pense que ça devrai être bon !';
+    }
+    //etiquette
+    elseif ($action == 'nouvelarticle') {
+        $req =$db->prepare('
+            INSERT INTO jejeu_articles(nom, description_courte, description_longue)
+            VALUES(:nom, :description_courte, :description_longue)');
+        $req->execute(array(
+            'nom' => $p['nom'],
+            'description_courte' => $p['description_courte'],
+            'description_longue' => $p['description_longue']
+        ));
         echo 'Je pense que ça devrai être bon !';
     }
     else
