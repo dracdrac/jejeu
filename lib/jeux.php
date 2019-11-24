@@ -5,14 +5,18 @@ require_once $config['paths']['lib'] . '/Parsedown.php';
 require_once $config['paths']['lib'] . '/utils.php';
 
 
+// Retourne l'objet base de donnee
 function connection()
 {
-    // Retourne l'objet base de donnee
     $config = include('config.php');
-
     try
     {
-        $bdd = new PDO('mysql:host='.$config['db']['host'].';dbname='.$config['db']['dbname'].';charset=utf8', $config['db']['username'], $config['db']['password']);
+        $bdd = new PDO('mysql:'
+            .'host='.$config['db']['host'].';'
+            .'dbname='.$config['db']['dbname'].';'
+            .'charset=utf8',
+            $config['db']['username'],
+            $config['db']['password']);
     }
     catch(Exception $e)
     {
@@ -29,86 +33,65 @@ function connection()
 ///////////////////////////////////
 
 
-// Affiche une page de jeu
-function affiche_page_jeu($id=NULL)
+function affiche_page($type, $id=NULL)
 {
     $config = include('config.php');
-    
-    if(! isset($id)){
-        $req = connection()->prepare('SELECT *  FROM jejeu_jeux ORDER BY RAND() LIMIT 1');
-        $req->execute();
+    $table = 'jejeu_' . $type;
+
+    if(!isset($id)){
+        $req = connection()->prepare('SELECT *  FROM '.$table.' ORDER BY RAND() LIMIT 1');
+        $req->execute(array($table));
     }
     else {
-        $req = connection()->prepare('SELECT *  FROM jejeu_jeux WHERE id=?');
+        $req = connection()->prepare('SELECT *  FROM '.$table.' WHERE id=?');
         $req->execute(array($id));
-    }
+        // $req->execute(array('jejeu_jeux', $id));
 
+        // $req->execute(array($table, $id));
+    }
+    
     if ($donnees = $req->fetch())
     {   
         // Parse la description longue (markdown)
         $Parsedown = new Parsedown();
         $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
-        // Ajoute une donnée pour la liste des etiquettes
-        $donnees['liste_etiquettes'] = affiche_liste_etiquettes($id);
+        // Ajouter liste si necessaire
+        if ($type == 'jeux') {
+            $donnees['liste_etiquettes'] = affiche_liste_etiquettes($id);
+        }
+        elseif ($type == 'etiquettes') {
+            $donnees['liste_jeux'] = affiche_liste_jeux($id);
+        }
         // Formate et affiche la page
+        $template = 'page_' . substr($type, 0, -1); //elnève le pluriek  :'(
         $req->closeCursor(); 
-        return formatString($config['templates']['page_jeu'], $donnees);
-    } else {
+        return formatString($config['templates'][$template], $donnees);
+    }
+    else
+    {
         // affiche une erreur
         $req->closeCursor(); 
         return $config['templates']['inexistant'];
     }
 
+}
+// Affiche une page de jeu
+function affiche_page_jeu($id=NULL)
+{
+    return affiche_page('jeux', $id);
 }
 
 // Affiche une page d'etiquette
 function affiche_page_etiquette($id)
 {
-    $config = include('config.php');
 
-    $req = connection()->prepare('SELECT *  FROM jejeu_etiquettes WHERE id=?');
-    $req->execute(array($id));
-
-    if ($donnees = $req->fetch())
-    {   
-        // Parse la description longue (markdown)
-        $Parsedown = new Parsedown();
-        $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
-        // Ajoute une donnée pour la liste des jeux
-        $donnees['liste_jeux'] = affiche_liste_jeux($id);
-        // Formate et affiche la page
-        $req->closeCursor(); 
-        return formatString($config['templates']['page_etiquette'], $donnees);
-    } else {
-        // affiche une erreur
-        $req->closeCursor(); 
-        return $config['templates']['inexistant'];
-    }
-
+    return affiche_page('etiquettes', $id);
 }
 
 // Affiche une page d'article
 function affiche_page_article($id)
 {
-    $config = include('config.php');
-
-    $req = connection()->prepare('SELECT *  FROM jejeu_articles WHERE id=?');
-    $req->execute(array($id));
-
-    if ($donnees = $req->fetch())
-    {   
-        // Parse la description longue (markdown)
-        $Parsedown = new Parsedown();
-        $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
-        // Formate et affiche la page
-        $req->closeCursor(); 
-        return formatString($config['templates']['page_article'], $donnees);
-    } else {
-        // affiche une erreur
-        $req->closeCursor(); 
-        return $config['templates']['inexistant'];
-    }
-
+    return affiche_page('articles', $id);
 }
 
 
