@@ -606,7 +606,7 @@ function submit($action, $p)
         elseif($action == 'nouvelarticle'){
             // modifier
             $req = $db->prepare('
-                UPDATE  jejeu_articless
+                UPDATE  jejeu_articles
                 SET description_longue = :description_longue, nom = :nom, description_courte= :description_courte
                 WHERE id=:id
                 ');

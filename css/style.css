@@ -1,8 +1,10 @@
 body{
     margin:0;
     height:100vh;
-    background-attachment: fixed;
+    background: #FFF5FD;
     font-family: 'Avara_Bold';
+    font-family: 'mono';
+   
 }
 
 
@@ -21,7 +23,7 @@ a:active {
 }
 
 p {
-    margin: 4px 0;
+    margin: 16px 0;
 }
 ul {
     margin-left:0;
@@ -53,6 +55,7 @@ ul {
 #header h1{
     font-size: small;
     display: inline;
+    
 }
 
 #footer{
@@ -80,17 +83,18 @@ ul {
 
 
 #content {
-    margin: 120px auto;
+    margin: 20px auto;
     padding:10px;
     max-width: 800px;
-    min-height: calc(100% - 320px);
+    min-height: calc(100% - 150px);
     
 }
 
 #content>h2, #content>a>h2{
     font-weight:normal;
+    font-family: 'Avara_Bold';
+
     font-size: 64pt;
-    text-align: center;
     margin-bottom: 30px;
 }
 
@@ -102,6 +106,7 @@ ul {
 
 .descriptionlongue h1{
     font-size: x-large;
+
 }
 .descriptionlongue h2{
     font-size: large;
@@ -116,10 +121,8 @@ ul {
 }
 .descriptioncourte 
 {
-    font-size: large;
+    font-size: small;
     font-style: italic;
-    margin:5px;
-    text-align: center;
 }
 label {
     display: block;
@@ -132,24 +135,19 @@ label {
 
 .bddlist ul {
     list-style: none;
-}
-
-.bddlist ul {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: column;
-    justify-content: center;
     padding: 0;
 }
-
+.bddlist ul li:before {
+  content: ">";
+  font-family: 'Avara_Bold';
+  font-size: 15pt;
+  position: absolute;
+  /*change margin to move dash around*/
+  margin-left: -1em;
+}
 .bddlist li{
-    display: inline-block;
     width:auto;
-    margin:10px;
-    padding: 10px;
-    text-align: center;
-    
-
+    margin:15px;
 
 }
 
@@ -157,8 +155,7 @@ label {
 }
 .bddlist li a{
     display: block;
-    margin: 5px;
-    font-size: x-large;
+    font-size: normal;
 }
 /*
 

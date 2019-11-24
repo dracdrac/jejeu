@@ -18,6 +18,6 @@
  -->
 </div>
 </body>
-<script type="text/javascript" src="js/colors.js"></script>
-
+<!-- <script type="text/javascript" src="js/colors.js"></script>
+ -->
 </html>
