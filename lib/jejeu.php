@@ -31,12 +31,16 @@ function connection()
 ///////////////////////////////////
 
 
-function affiche_page($type, $id=NULL)
+function affiche_page($categorie, $id=NULL)
 {
     global $config;
+
+    // Le type correspont à la catégorie au singulier (e.g. jeux -> jeu)
+    $type = substr($categorie, 0, -1);
+
     ////// REQUETE BDD //////
 
-    $table = 'jejeu_' . $type;
+    $table = 'jejeu_' . $categorie;
 
     if(!isset($id))
     {
@@ -57,14 +61,14 @@ function affiche_page($type, $id=NULL)
         $Parsedown = new Parsedown();
         $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
         // Ajouter liste si necessaire
-        if ($type == 'jeux') {
+        if ($categorie == 'jeux') {
             $donnees['liste_etiquettes'] = affiche_liste_etiquettes($id);
         }
-        elseif ($type == 'etiquettes') {
+        elseif ($categorie == 'etiquettes') {
             $donnees['liste_jeux'] = affiche_liste_jeux($id);
         }
         // Formate et affiche la page
-        $template = 'page_' . substr($type, 0, -1); //enlève le pluriel  :'(
+        $template = 'page_' . $type; 
         $req->closeCursor(); 
         return formatString($config['templates'][$template], $donnees);
     }
@@ -94,46 +98,55 @@ function affiche_page_article($id)
 
 
 // Affiche la liste
-function affiche_liste($type, $rel_id=NULL, $is_checkable=false, $is_administrable=false)
+function affiche_liste($categorie, $rel_id=NULL, $is_checkable=false, $is_administrable=false)
 {
     global $config;
+
+    // Le type correspont à la catégorie au singulier (e.g. jeux -> jeu)
+    $type = substr($categorie, 0, -1);
 
     ////// REQUETE BDD //////
 
     // table des elements de la liste
-    $table = 'jejeu_' . $type;
+    $table = 'jejeu_' . $categorie;
 
     // S'il y a une contrainte de relation
     if (isset($rel_id))
     {
-        // Type et table des elements à mettre en relation
-        $rel_type = ($type == 'jeux') ? 'etiquettes' : 'jeux';
-        $rel_table = 'jejeu_' . $rel_type;
+        // categorie et table des elements à mettre en relation
+        $rel_categorie = ($categorie == 'jeux') ? 'etiquettes' : 'jeux';
+        $rel_type = substr($rel_categorie, 0, -1);
+        $rel_table = 'jejeu_' . $rel_categorie;
 
         // Selectionne tous les elements de la table en relation avec rel_id
         $req = connection()->prepare('
-            SELECT a.nom, a.id, a.description_courte
+            SELECT a.nom, a.id, a.description_courte, TRUE AS related 
             FROM '.$table.' a, '.$rel_table.' b, jejeu_jeux_etiquettes c
-            WHERE b.id = c.id_' . substr($rel_type, 0, -1)
-            .' AND a.id = c.id_' . substr($type, 0, -1) 
+            WHERE b.id = c.id_' . substr($rel_categorie, 0, -1)
+            .' AND a.id = c.id_' . substr($categorie, 0, -1) 
             .' AND b.id = ?'
         );
         $req->execute(array($rel_id));
 
-        // Si la liste est checkable, il faut aussi avoir une req négative
+        // Si la liste est checkable, il faut aussi inclure les negatif
         if ($is_checkable)
         {
-            // Selectionne tous les elements de la table PAS en relation avec rel_id
-            $req_neg = $db->prepare('
-                SELECT nom, id, description_courte
+            $req = connection()->prepare('
+                (SELECT a.nom, a.id, a.description_courte, TRUE AS related 
+                FROM '.$table.' a, '.$rel_table.' b, jejeu_jeux_etiquettes c
+                WHERE b.id = c.id_' . substr($rel_categorie, 0, -1)
+                    .' AND a.id = c.id_' . substr($categorie, 0, -1) 
+                    .' AND b.id = ?)
+                UNION
+                (SELECT nom, id, description_courte, FALSE AS related 
                 FROM '.$table
-                .'WHERE id NOT IN (SELECT a.id
+                .' WHERE id NOT IN (SELECT a.id
                     FROM '.$table.' a, '.$rel_table.' b, jejeu_jeux_etiquettes c
-                    WHERE b.id = c.id_' . substr($rel_type, 0, -1)
-                    .' AND a.id = c.id_' . substr($type, 0, -1) 
-                    .' AND b.id = ?)'
+                    WHERE b.id = c.id_' . $rel_type
+                    .' AND a.id = c.id_' . $type
+                    .' AND b.id = ?))'
             );
-            $req_neg->execute(array($rel_id));
+            $req->execute(array($rel_id, $rel_id));
         }
     }
     // Sinon
@@ -141,49 +154,41 @@ function affiche_liste($type, $rel_id=NULL, $is_checkable=false, $is_administrab
     {
         // Selectionne tous les elements de la table
         $req = connection()->prepare('
-            SELECT nom, id, description_courte
+            SELECT nom, id, description_courte, FALSE AS related
             FROM ' . $table);
         $req->execute();
     }
 
     ////// FORMATAGE DES DONNEES //////
 
-    function elements_formates($template, $req)
+   if($is_checkable)
     {
-        global $config;
-        $elements = "";
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates'][$template], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-        return $elements;
-    }
-
-
-    if($is_checkable)
-    {
-        if(isset($req_neg))
-        {
-            $elements = elements_formates('checked_'.substr($type,0,-1), $req_neg)
-                      . elements_formates('check_'.substr($type,0,-1), $req);
-        }
-        else
-        {
-            $elements = elements_formates('check_'.substr($type,0,-1), $req);
-        }
+        $template = 'check';
     }
     elseif ($is_administrable)
     {
-        # code...
+        $template = 'administrable';
     }
     else
     {
-        $elements = elements_formates('lien_'.substr($type, 0, -1), $req);
+        $template = 'lien';
     }
 
+    $elements = "";
+    while ($donnees = $req->fetch())
+    {   
+        $donnees["type"] = $type;
+        $donnees["categorie"] = $categorie;
+        $donnees["check_attribute"] = $donnees["related"] ? 'checked' : '';
+
+        // Formate et ajoute l'element
+        $lien = formatString($config['templates'][$template], $donnees);
+        $elements .= formatString($config['templates']['li'], ['element' => $lien]);
+    }
+    $req->closeCursor(); 
+    return $elements;
+
+ 
     // Formate et affiche la liste
     return formatString($config['templates']['ul'],['elements' => $elements]);
 

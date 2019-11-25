@@ -1,4 +1,15 @@
 <?php
+
+// $templates_elements = array(
+//     "descriptioncourte" =>
+//         "<span class='descriptioncourte'>{{description_courte}}</span>",
+//     "lien_jeu"=>
+//         "<a href='jeu.php?id={{id}}' class='jeu'>{{nom}}</a>"
+//     "lien_jeu"=>
+//         "<a href='jeu.php?id={{id}}' class='jeu'>{{nom}}</a>"
+
+// );
+
  return array(
     "info" => array(
         "baseUrl" => "http://jejeu.org"
@@ -14,80 +25,32 @@
     "templates" => array(
 
         // PAGES
-        "page_jeu" => "
-            <a href='jeu.php?id={{id}}'><h2 class='jeu'>{{nom}}</h2></a>
-            <p class='descriptioncourte'>{{description_courte}}</p>
-            <div class='descriptionlongue'>
-            {{description_longue}}
-            </div>
-            <p>Les etiquettes attachées à ce jeu :</p>
-            <div class='bddlist'>{{liste_etiquettes}}</div>
-        ",
-
-        "page_etiquette" => "
-            <a href='etiquette.php?id={{id}}'><h2 class='etiquette'>{{nom}}</h2></a>
-            <p class='descriptioncourte'>{{description_courte}}</p>
-            <div class='descriptionlongue'>
-            {{description_longue}}
-            </div>
-            <p>Les jeux auxquels cette etiquette est attachée :</p>
-
-            <div class='bddlist'>{{liste_jeux}}</div>
-        ",
-
-        "page_article" => "
-            <h2 class='etiquette'>{{nom}}</h2>
-            <p class='descriptioncourte'>{{description_courte}}</p>
-            <div class='descriptionlongue'>
-            {{description_longue}}
-            </div>
-        ",
+        "page_jeu" => file_get_contents('template/jeu.html'),
+        "page_etiquette" => file_get_contents('template/etiquette.html'),
+        "page_article" => file_get_contents('template/article.html'),
 
         // LIST HELPERS
-
         "ul" => "<ul>{{elements}}</ul>",
-
         "li" => "<li>{{element}}</li>",
 
         // CHECKBOXES ET LIENS
-
-        "checked_jeu" => "
-        <input type='checkbox' name='jeux[]' value='{{id}}' checked/>
-        <a href='jeu.php?id={{id}}' class='jeu'>{{nom}}</a>
-        <span class='descriptioncourte'>{{description_courte}}</span>
-        ",
-        "check_jeu" => "
-        <input type='checkbox' name='jeux[]' value='{{id}}'/>
-        <a href='jeu.php?id={{id}}' class='jeu'>{{nom}}</a>
+        "lien" => "
+        <a href='{{type}}.php?id={{id}}' class='{{type}}'>{{nom}}</a>
         <span class='descriptioncourte'>{{description_courte}}</span>
         ",
 
-        "lien_jeu" => "
-        <a href='jeu.php?id={{id}}' class='jeu'>{{nom}}</a>
+        "check" => "
+        <input type='checkbox' name='{{categorie}}[]' value='{{id}}' {{check_attribute}}/>
+        <a href='{{type}}.php?id={{id}}' class='{{type}}'>{{nom}}</a>
         <span class='descriptioncourte'>{{description_courte}}</span>
         ",
 
-        "check_etiquette" => "
-        <input type='checkbox' name='etiquettes[]' value='{{id}}' />
-        <a href='etiquette.php?id={{id}}' class='etiquette'>{{nom}}</a>
+        "administrable" => "
+        <input type='checkbox' name='{{categorie}}[]' value='{{id}}'/>
+        <a href='{{type}}.php?id={{id}}' class='{{type}}'>{{nom}}</a>
         <span class='descriptioncourte'>{{description_courte}}</span>
         ",
 
-        "checked_etiquette" => "
-        <input type='checkbox' name='etiquettes[]' value='{{id}}' checked />
-        <a href='etiquette.php?id={{id}}' class='etiquette'>{{nom}}</a>
-        <span class='descriptioncourte'>{{description_courte}}</span>
-        ",
-
-        "lien_etiquette" => "
-        <a href='etiquette.php?id={{id}}' class='etiquette'>{{nom}}</a>
-        <span class='descriptioncourte'>{{description_courte}}</span>
-        ",
-
-        "lien_article" => "
-        <a href='article.php?id={{id}}' class='article'>{{nom}}</a>
-        <span class='descriptioncourte'>{{description_courte}}</span>
-        ",
 
         // ADMIN
 
