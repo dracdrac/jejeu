@@ -36,20 +36,24 @@ function connection()
 function affiche_page($type, $id=NULL)
 {
     $config = include('config.php');
+
+    ////// REQUETE BDD //////
+
     $table = 'jejeu_' . $type;
 
-    if(!isset($id)){
+    if(!isset($id))
+    {
         $req = connection()->prepare('SELECT *  FROM '.$table.' ORDER BY RAND() LIMIT 1');
         $req->execute(array($table));
     }
-    else {
+    else
+    {
         $req = connection()->prepare('SELECT *  FROM '.$table.' WHERE id=?');
         $req->execute(array($id));
-        // $req->execute(array('jejeu_jeux', $id));
-
-        // $req->execute(array($table, $id));
     }
     
+    ////// FORMATAGE DES DONNEES //////
+
     if ($donnees = $req->fetch())
     {   
         // Parse la description longue (markdown)
@@ -63,7 +67,7 @@ function affiche_page($type, $id=NULL)
             $donnees['liste_jeux'] = affiche_liste_jeux($id);
         }
         // Formate et affiche la page
-        $template = 'page_' . substr($type, 0, -1); //elnève le pluriek  :'(
+        $template = 'page_' . substr($type, 0, -1); //enlève le pluriel  :'(
         $req->closeCursor(); 
         return formatString($config['templates'][$template], $donnees);
     }
@@ -80,14 +84,11 @@ function affiche_page_jeu($id=NULL)
 {
     return affiche_page('jeux', $id);
 }
-
 // Affiche une page d'etiquette
 function affiche_page_etiquette($id)
 {
-
     return affiche_page('etiquettes', $id);
 }
-
 // Affiche une page d'article
 function affiche_page_article($id)
 {
@@ -95,224 +96,130 @@ function affiche_page_article($id)
 }
 
 
+// Affiche la liste
+function affiche_liste($type, $rel_id=NULL, $is_checkable=false, $is_administrable=false)
+{
+    $config = include('config.php');
+
+    ////// REQUETE BDD //////
+
+    // table des elements de la liste
+    $table = 'jejeu_' . $type;
+
+    // S'il y a une contrainte de relation
+    if (isset($rel_id))
+    {
+        // Type et table des elements à mettre en relation
+        $rel_type = ($type == 'jeux') ? 'etiquettes' : 'jeux';
+        $rel_table = 'jejeu_' . $rel_type;
+
+        // Selectionne tous les elements de la table en relation avec rel_id
+        $req = connection()->prepare('
+            SELECT a.nom, a.id, a.description_courte
+            FROM '.$table.' a, '.$rel_table.' b, jejeu_jeux_etiquettes c
+            WHERE b.id = c.id_' . substr($rel_type, 0, -1)
+            .' AND a.id = c.id_' . substr($type, 0, -1) 
+            .' AND b.id = ?'
+        );
+        $req->execute(array($rel_id));
+
+        // Si la liste est checkable, il faut aussi avoir une req négative
+        if ($is_checkable)
+        {
+            // Selectionne tous les elements de la table PAS en relation avec rel_id
+            $req_neg = $db->prepare('
+                SELECT nom, id, description_courte
+                FROM '.$table
+                .'WHERE id NOT IN (SELECT a.id
+                    FROM '.$table.' a, '.$rel_table.' b, jejeu_jeux_etiquettes c
+                    WHERE b.id = c.id_' . substr($rel_type, 0, -1)
+                    .' AND a.id = c.id_' . substr($type, 0, -1) 
+                    .' AND b.id = ?)'
+            );
+            $req_neg->execute(array($rel_id));
+        }
+    }
+    // Sinon
+    else
+    {
+        // Selectionne tous les elements de la table
+        $req = connection()->prepare('
+            SELECT nom, id, description_courte
+            FROM ' . $table);
+        $req->execute();
+    }
+
+    ////// FORMATAGE DES DONNEES //////
+
+    function elements_formates($template, $req)
+    {
+        $elements = "";
+        while ($donnees = $req->fetch())
+        {   
+            // Formate et ajoute l'element
+            $lien = formatString($config['templates'][$template], $donnees);
+            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
+        }
+        $req->closeCursor(); 
+        return $elements;
+    }
+
+
+    if($is_checkable)
+    {
+        if(isset($req_neg))
+        {
+            $elements = elements_formates('checked_'.substr($type,0,-1), $req_neg)
+                      . elements_formates('check_'.substr($type,0,-1), $req);
+        }
+        else
+        {
+            $elements = elements_formates('check_'.substr($type,0,-1), $req);
+        }
+    }
+    elseif ($is_administrable)
+    {
+        # code...
+    }
+    else
+    {
+        $elements = elements_formates('lien_'.substr($type, 0, -1), $req);
+    }
+
+    // Formate et affiche la liste
+    return formatString($config['templates']['ul'],['elements' => $elements]);
+
+}
+
+
 // Affiche la liste de tous les jeux
 function affiche_liste_jeux($etiquette_id=NULL)
 {
-    $config = include('config.php');
-    if (isset($etiquette_id)){
-        $req = connection()->prepare('
-            SELECT j.nom, j.id, j.description_courte
-            FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-            WHERE e.id = je.id_etiquette
-            AND j.id = je.id_jeu
-            AND e.id = ?
-        ');
-        $req->execute(array($etiquette_id));
-    }
-    else{
-        $req = connection()->prepare('
-            SELECT nom, id, description_courte
-            FROM jejeu_jeux');
-        $req->execute();
-    }
-
-    $elements = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'element
-        $lien = formatString($config['templates']['lien_jeu'], $donnees);
-        $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // Formate et affiche la liste
-    return formatString($config['templates']['ul'],['elements' => $elements]);
-
+    return affiche_liste('jeux', $etiquette_id);
 }
-
 // Affiche la liste des etiquettes
 function affiche_liste_etiquettes($jeu_id=NULL)
 {
-    $config = include('config.php');
-    if (isset($jeu_id)){
-        $req = connection()->prepare('
-            SELECT e.nom, e.id, e.description_courte
-            FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-            WHERE e.id = je.id_etiquette
-            AND j.id = je.id_jeu
-            AND j.id = ?
-        ');
-        $req->execute(array($jeu_id));
-
-    }
-    else{
-        $req = connection()->prepare('
-            SELECT nom, id, description_courte
-            FROM jejeu_etiquettes');
-        $req->execute();
-    }
-
-    $elements = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'element
-        $lien = formatString($config['templates']['lien_etiquette'], $donnees);
-        $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // Formate et affiche la liste
-    return formatString($config['templates']['ul'],['elements' => $elements]);
-
+    return affiche_liste('etiquettes', $jeu_id);
 }
-
 // Affiche la liste des articles
 function affiche_liste_articles()
 {
-    $config = include('config.php');
-    $req = connection()->prepare('
-        SELECT nom, id, description_courte
-        FROM jejeu_articles');
-    $req->execute();
-
-    $elements = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'article
-        $lien = formatString($config['templates']['lien_article'], $donnees);
-        $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // Formate et affiche la liste
-    return formatString($config['templates']['ul'],['elements' => $elements]);
-
+    return affiche_liste('articles');
 }
-
-
 // Affiche la liste  check de tous les jeux
 function affiche_check_jeux($etiquette_id=NULL)
 {
-    $config = include('config.php');
-    $db = connection();
-        $elements = "";
-
-    if(isset($etiquette_id))
-    {    $req = $db->prepare('
-                SELECT j.nom, j.id, j.description_courte
-                FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-                WHERE j.id = je.id_jeu
-                AND e.id = je.id_etiquette
-                AND e.id = ?
-            ');
-        $req->execute(array($etiquette_id));
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['checked_jeu'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-        $req = $db->prepare('
-                SELECT nom, id, description_courte
-                FROM jejeu_jeux
-                WHERE id NOT IN (SELECT j.id
-                    FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-                    WHERE j.id = je.id_jeu
-                    AND e.id = je.id_etiquette
-                    AND e.id = ?)
-            ');
-        $req->execute(array($etiquette_id));
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['check_jeu'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-
-    }
-    else {
-        $req = $db->prepare('SELECT nom, id, description_courte FROM jejeu_jeux');
-        $req->execute();
-
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['check_jeu'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-    }
-
-
-
-    // Formate et affiche la liste
-    return formatString($config['templates']['ul'],['elements' => $elements]);
-
+    return affiche_liste('jeux', $etiquette_id, true);
 }
 // Affiche la liste check des etiquettes
 function affiche_check_etiquettes($jeu_id=NULL)
 {
-    $config = include('config.php');
-    $db = connection();
-        $elements = "";
-
-    if(isset($jeu_id))
-    {    $req = $db->prepare('
-                SELECT e.nom, e.id, e.description_courte
-                FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-                WHERE e.id = je.id_etiquette
-                AND j.id = je.id_jeu
-                AND j.id = ?
-
-            ');
-        $req->execute(array($jeu_id));
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['checked_etiquette'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-        $req = $db->prepare('
-                SELECT nom, id, description_courte
-                FROM jejeu_etiquettes
-                WHERE id NOT IN (SELECT e.id
-                    FROM jejeu_jeux j, jejeu_etiquettes e, jejeu_jeux_etiquettes je
-                    WHERE e.id = je.id_etiquette
-                    AND j.id = je.id_jeu
-                    AND j.id = ?)
-            ');
-        $req->execute(array($jeu_id));
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['check_etiquette'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-
-    }
-    else {
-        $req = $db->prepare('SELECT nom, id, description_courte FROM jejeu_etiquettes');
-        $req->execute();
-
-        while ($donnees = $req->fetch())
-        {   
-            // Formate et ajoute l'element
-            $lien = formatString($config['templates']['check_etiquette'], $donnees);
-            $elements .= formatString($config['templates']['li'], ['element' => $lien]);
-        }
-        $req->closeCursor(); 
-    }
-
-
-
-    // Formate et affiche la liste
-    return formatString($config['templates']['ul'],['elements' => $elements]);
+    return affiche_liste('etiquettes', $jeu_id, true);
 }
 
+
+//////////////////////////////////////////////:
 
 // Affiche un formulaire de etiquette
 function affiche_etiquette_formulaire($id=NULL)
