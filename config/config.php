@@ -11,19 +11,9 @@
     //     "password" => ###,
     //     "host" => ###
     // ),
-    "paths" => array(
-        "lib" => "lib",
-        "template" => "template",
-        "resources" => "/path/to/resources",
-        "images" => array(
-            "content" => $_SERVER["DOCUMENT_ROOT"] . "/images/content",
-            "layout" => $_SERVER["DOCUMENT_ROOT"] . "/images/layout"
-        )
-    ),
     "templates" => array(
 
         // PAGES
-
         "page_jeu" => "
             <a href='jeu.php?id={{id}}'><h2 class='jeu'>{{nom}}</h2></a>
             <p class='descriptioncourte'>{{description_courte}}</p>

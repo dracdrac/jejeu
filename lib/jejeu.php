@@ -1,14 +1,12 @@
 <?php
 
-$config = include('config.php');
-require_once $config['paths']['lib'] . '/Parsedown.php';
-require_once $config['paths']['lib'] . '/utils.php';
-
+require_once('lib/Parsedown.php');
+require_once('lib/utils.php');
 
 // Retourne l'objet base de donnee
 function connection()
 {
-    $config = include('config.php');
+    global $config;
     try
     {
         $bdd = new PDO('mysql:'
@@ -35,8 +33,7 @@ function connection()
 
 function affiche_page($type, $id=NULL)
 {
-    $config = include('config.php');
-
+    global $config;
     ////// REQUETE BDD //////
 
     $table = 'jejeu_' . $type;
@@ -99,7 +96,7 @@ function affiche_page_article($id)
 // Affiche la liste
 function affiche_liste($type, $rel_id=NULL, $is_checkable=false, $is_administrable=false)
 {
-    $config = include('config.php');
+    global $config;
 
     ////// REQUETE BDD //////
 
@@ -153,6 +150,7 @@ function affiche_liste($type, $rel_id=NULL, $is_checkable=false, $is_administrab
 
     function elements_formates($template, $req)
     {
+        global $config;
         $elements = "";
         while ($donnees = $req->fetch())
         {   
@@ -224,7 +222,7 @@ function affiche_check_etiquettes($jeu_id=NULL)
 // Affiche un formulaire de etiquette
 function affiche_etiquette_formulaire($id=NULL)
 {
-    $config = include('config.php');
+    global $config;
     if (isset($id)){
         $req = connection()->prepare('
             SELECT id, nom, description_courte, description_longue
@@ -254,7 +252,7 @@ function affiche_etiquette_formulaire($id=NULL)
 // Affiche un formulaire de jeux
 function affiche_jeu_formulaire($id=NULL)
 {
-    $config = include('config.php');
+    global $config;
     if (isset($id)){
         $req = connection()->prepare('
             SELECT id, nom, description_courte, description_longue
@@ -282,7 +280,7 @@ function affiche_jeu_formulaire($id=NULL)
 // Affiche un formulaire d'etiquette
 function affiche_article_formulaire($id=NULL)
 {
-    $config = include('config.php');
+    global $config;
     if (isset($id)){
         $req = connection()->prepare('
             SELECT id, nom, description_courte, description_longue
@@ -309,7 +307,7 @@ function affiche_article_formulaire($id=NULL)
 //
 function affiche_liste_modifier_suprimer()
 {
-    $config = include('config.php');
+    global $config;
     $db = connection();
 
     // ETIQUETTES

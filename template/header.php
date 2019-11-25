@@ -1,3 +1,7 @@
+<?php
+    $config = include('config/config.php');
+    require_once('lib/jejeu.php');
+?>
 <!DOCTYPE html>
 <html>
 <head>

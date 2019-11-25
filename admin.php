@@ -1,9 +1,7 @@
-<?php    
-  include("password_protect.php");
-    $config = include('config.php');
-    require_once $config['paths']['template'] . "/header.php";
-    require_once $config['paths']['lib'] . "/jeux.php";
-
+<?php
+    // PAGE : ADMINISTRATION
+    include("lib/password_protect.php");
+    require('template/header.php');
 ?>
     <h2>Administration du site <small>(Le genre d'endroit méga secret)</small></h2>
     <ul class="nav">
@@ -12,6 +10,7 @@
       <li><a href="admin.php?action=nouvelarticle">Nouvel article</a></li>
       <li><a href="admin.php?action=modifier">Modifier / Suprimer</a></li>
     </ul>
+
 <?php
   if (isset($_GET['action'])) {
     if (isset($_GET['submit'])) {
@@ -40,7 +39,5 @@
       }
     }
   }
-
-
-    require_once $config['paths']['template'] . "/footer.php";
+  require('template/footer.php');
 ?>

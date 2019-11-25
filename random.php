@@ -1,8 +1,7 @@
-
 <?php    
-    $config = include('config.php');
-    require_once $config['paths']['template'] . "/header.php";
-    require_once $config['paths']['lib'] .  '/jeux.php';
+    // PAGE : UN JEU AU HAZARD
+    require('template/header.php');
     echo affiche_page_jeu();
-    require_once $config['paths']['template'] . "/footer.php";
+    require('template/footer.php');
 ?>
+

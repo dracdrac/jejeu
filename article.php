@@ -1,10 +1,7 @@
-
 <?php    
-    $config = include('config.php');
-    require_once $config['paths']['template'] . "/header.php";
-    require_once $config['paths']['lib'] .  '/jeux.php';
+    // PAGE : UN ARTICLE
+    require('template/header.php');
     echo affiche_page_article($_GET['id']);
-
-
-    require_once $config['paths']['template'] . "/footer.php";
+    $lien_modifier = "admin.php?action=modifierarticle&id=" . $_GET['id'];
+    require('template/footer.php');
 ?>
