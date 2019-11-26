@@ -5,39 +5,48 @@
 ?>
     <h2>Administration du site <small>(Le genre d'endroit méga secret)</small></h2>
     <ul class="nav">
-      <li><a href="admin.php?action=nouveaujeu">Nouveau jeu</a></li>
-      <li><a href="admin.php?action=nouvelleetiquette">Nouvelle etiquette</a></li>
-      <li><a href="admin.php?action=nouvelarticle">Nouvel article</a></li>
-      <li><a href="admin.php?action=modifier">Modifier / Suprimer</a></li>
+      <li><a href="admin.php?action=update&categorie=jeux">Nouveau jeu</a></li>
+      <li><a href="admin.php?action=update&categorie=etiquettes">Nouvelle etiquette</a></li>
+      <li><a href="admin.php?action=update&categorie=articles">Nouvel article</a></li>
+      <li><a href="admin.php?action=listes_administrables">Modifier / Suprimer</a></li>
     </ul>
 
 <?php
-  if (isset($_GET['action'])) {
-    if (isset($_GET['submit'])) {
-      submit($_GET['action'], $_POST);
-    }else{
-      if ($_GET['action'] == 'nouvelleetiquette') {
-        echo affiche_etiquette_formulaire();
-      }
-      elseif ($_GET['action'] == 'nouveaujeu') {
-        echo affiche_jeu_formulaire();
-      }
-      elseif ($_GET['action'] == 'nouvelarticle') {
-        echo affiche_article_formulaire();
-      }
-      elseif ($_GET['action'] == 'modifier') {
-        echo affiche_liste_modifier_suprimer();
-      }
-      elseif ($_GET['action'] == 'modifierjeu') {
-        echo affiche_jeu_formulaire($_GET['id']);
-      }
-      elseif ($_GET['action'] == 'modifieretiquette') {
-        echo affiche_etiquette_formulaire($_GET['id']);
-      }
-      elseif ($_GET['action'] == 'modifierarticle') {
-        echo affiche_article_formulaire($_GET['id']);
-      }
+
+if (isset($_GET['action']) and in_array($_GET['action'], ['update', 'listes_administrables']))
+{
+  $action = $_GET['action'];
+}
+if (isset($_GET['categorie']) and in_array($_GET['categorie'], ['articles', 'jeux', 'etiquettes']))
+{
+  $categorie = $_GET['categorie'];
+}
+if (isset($_GET['id']) and is_numeric($_GET['id']))
+{
+  $id = $_GET['id'];
+}
+else {
+  $id = NULL;
+}
+
+
+if (isset($action))
+{
+  if (isset($_GET['submit']))
+  {
+    submit($action, $categorie, $_POST);
+  }
+  else
+  {
+    if ($action == 'update')
+    {
+      echo affiche_formulaire($categorie, $id);
+    }
+    elseif ($action == 'listes_administrables')
+    {
+      echo affiche_listes_administrables();
     }
   }
-  require('template/footer.php');
+}
+require('template/footer.php');
 ?>

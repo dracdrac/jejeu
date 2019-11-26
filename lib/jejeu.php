@@ -24,8 +24,6 @@ function connection()
 }
 
 
-
-///////////////////////////////////
 ///////////////////////////////////
 ///////// AFFICHAGE ///////////////
 ///////////////////////////////////
@@ -41,17 +39,15 @@ function affiche_page($categorie, $id=NULL)
     ////// REQUETE BDD //////
 
     $table = 'jejeu_' . $categorie;
-
     if(!isset($id))
     {
-        $req = connection()->prepare('SELECT *  FROM '.$table.' ORDER BY RAND() LIMIT 1');
-        $req->execute(array($table));
+        $req = connection()->prepare('SELECT *  FROM '.$table.' WHERE nom NOT LIKE "\_%" ORDER BY RAND() LIMIT 1');
     }
     else
     {
         $req = connection()->prepare('SELECT *  FROM '.$table.' WHERE id=?');
-        $req->execute(array($id));
     }
+    $req->execute(array($id));
     
     ////// FORMATAGE DES DONNEES //////
 
@@ -61,15 +57,18 @@ function affiche_page($categorie, $id=NULL)
         $Parsedown = new Parsedown();
         $donnees['description_longue'] = $Parsedown->text($donnees['description_longue']);
         // Ajouter liste si necessaire
-        if ($categorie == 'jeux') {
-            $donnees['liste_etiquettes'] = affiche_liste_etiquettes($id);
+        if ($categorie == 'jeux')
+        {
+            $donnees['liste_etiquettes'] = affiche_liste_etiquettes($donnees['id']);
         }
-        elseif ($categorie == 'etiquettes') {
-            $donnees['liste_jeux'] = affiche_liste_jeux($id);
+        elseif ($categorie == 'etiquettes')
+        {
+            $donnees['liste_jeux'] = affiche_liste_jeux($donnees['id']);
         }
         // Formate et affiche la page
         $template = 'page_' . $type; 
         $req->closeCursor(); 
+
         return formatString($config['templates'][$template], $donnees);
     }
     else
@@ -98,7 +97,7 @@ function affiche_page_article($id)
 
 
 // Affiche la liste
-function affiche_liste($categorie, $rel_id=NULL, $is_checkable=false, $is_administrable=false)
+function affiche_liste($categorie, $liste_type, $rel_id=NULL)
 {
     global $config;
 
@@ -129,7 +128,7 @@ function affiche_liste($categorie, $rel_id=NULL, $is_checkable=false, $is_admini
         $req->execute(array($rel_id));
 
         // Si la liste est checkable, il faut aussi inclure les negatif
-        if ($is_checkable)
+        if ($liste_type == 'check')
         {
             $req = connection()->prepare('
                 (SELECT a.nom, a.id, a.description_courte, TRUE AS related 
@@ -161,28 +160,19 @@ function affiche_liste($categorie, $rel_id=NULL, $is_checkable=false, $is_admini
 
     ////// FORMATAGE DES DONNEES //////
 
-   if($is_checkable)
-    {
-        $template = 'check';
-    }
-    elseif ($is_administrable)
-    {
-        $template = 'administrable';
-    }
-    else
-    {
-        $template = 'lien';
-    }
-
     $elements = "";
     while ($donnees = $req->fetch())
     {   
+        // ne traite pas les objets qui commencent par '_' dans les listes de lien
+        if($liste_type == 'lien' and substr($donnees["nom"], 0, 1) == '_'){
+            continue;
+        }
         $donnees["type"] = $type;
         $donnees["categorie"] = $categorie;
         $donnees["check_attribute"] = $donnees["related"] ? 'checked' : '';
 
         // Formate et ajoute l'element
-        $lien = formatString($config['templates'][$template], $donnees);
+        $lien = formatString($config['templates'][$liste_type], $donnees);
         $elements .= formatString($config['templates']['li'], ['element' => $lien]);
     }
     $req->closeCursor(); 
@@ -198,241 +188,119 @@ function affiche_liste($categorie, $rel_id=NULL, $is_checkable=false, $is_admini
 // Affiche la liste de tous les jeux
 function affiche_liste_jeux($etiquette_id=NULL)
 {
-    return affiche_liste('jeux', $etiquette_id);
+    return affiche_liste('jeux', 'lien', $etiquette_id);
 }
 // Affiche la liste des etiquettes
 function affiche_liste_etiquettes($jeu_id=NULL)
 {
-    return affiche_liste('etiquettes', $jeu_id);
+    return affiche_liste('etiquettes', 'lien', $jeu_id);
 }
 // Affiche la liste des articles
 function affiche_liste_articles()
 {
-    return affiche_liste('articles');
+    return affiche_liste('articles', 'lien');
 }
 // Affiche la liste  check de tous les jeux
 function affiche_check_jeux($etiquette_id=NULL)
 {
-    return affiche_liste('jeux', $etiquette_id, true);
+    return affiche_liste('jeux', 'check', $etiquette_id);
 }
 // Affiche la liste check des etiquettes
 function affiche_check_etiquettes($jeu_id=NULL)
 {
-    return affiche_liste('etiquettes', $jeu_id, true);
+    return affiche_liste('etiquettes', 'check', $jeu_id);
+}
+
+// Affiche les listes administrables de tous les elements
+function affiche_listes_administrables()
+{
+    global $config;
+    return formatString($config['templates']['listes_administrables'],[
+        'liste_jeux' => affiche_liste('jeux', 'administrable'),
+        'liste_etiquettes' => affiche_liste('etiquettes', 'administrable'),
+        'liste_articles' => affiche_liste('articles', 'administrable'),
+    ]);
 }
 
 
 //////////////////////////////////////////////:
 
-// Affiche un formulaire de etiquette
-function affiche_etiquette_formulaire($id=NULL)
+function affiche_formulaire($categorie, $id=NULL)
 {
     global $config;
-    if (isset($id)){
-        $req = connection()->prepare('
-            SELECT id, nom, description_courte, description_longue
-            FROM jejeu_etiquettes
-            WHERE id=?
-            ');
+
+    // Le type correspont à la catégorie au singulier (e.g. jeux -> jeu)
+    $type = substr($categorie, 0, -1);
+
+    ////// REQUETE BDD //////
+
+    $table = 'jejeu_' . $categorie;
+    if(!isset($id))
+    {
+        // nouvel element
+        $donnees = $config['templates']['sample_' . $type];
+    }
+    else
+    {
+        // modifier element
+        $req = connection()->prepare('SELECT *  FROM '.$table.' WHERE id=?');
         $req->execute(array($id));
         $donnees = $req->fetch();
         $req->closeCursor(); 
     }
-    else{
-        $donnees = $config['templates']['sample_etiquette'];
-    }
+    
+    ////// FORMATAGE BDD //////
 
     $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
     $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
 
-
-    $donnees['check_jeux'] = affiche_check_jeux($id);
+    if ($categorie == 'jeux')
+    {
+        $donnees['check_etiquettes'] = affiche_check_etiquettes($id);
+    } elseif ($categorie == 'etiquettes')
+    {
+        $donnees['check_jeux'] = affiche_check_jeux($id);
+    }
+    
     $donnees['id'] = $id;
 
-
-    return formatString($config['templates']['etiquette_formulaire'], $donnees);
-}
-
-
-// Affiche un formulaire de jeux
-function affiche_jeu_formulaire($id=NULL)
-{
-    global $config;
-    if (isset($id)){
-        $req = connection()->prepare('
-            SELECT id, nom, description_courte, description_longue
-            FROM jejeu_jeux
-            WHERE id=?
-            ');
-        $req->execute(array($id));
-        $donnees = $req->fetch();
-        $req->closeCursor(); 
-    }
-    else{
-        $donnees = $config['templates']['sample_jeu'];
-    }
-
-    $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
-    $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
-
-    $donnees['check_etiquettes'] = affiche_check_etiquettes($id);
-    $donnees['id'] = $id;
-
-    return formatString($config['templates']['jeu_formulaire'], $donnees);
-}
-
-
-// Affiche un formulaire d'etiquette
-function affiche_article_formulaire($id=NULL)
-{
-    global $config;
-    if (isset($id)){
-        $req = connection()->prepare('
-            SELECT id, nom, description_courte, description_longue
-            FROM jejeu_articles
-            WHERE id=?
-            ');
-        $req->execute(array($id));
-        $donnees = $req->fetch();
-        $req->closeCursor(); 
-    }
-    else{
-        $donnees = $config['templates']['sample_article'];
-    }
-
-    $donnees['nom'] = htmlspecialchars($donnees['nom'], ENT_QUOTES, 'UTF-8');
-    $donnees['description_courte'] = htmlspecialchars($donnees['description_courte'], ENT_QUOTES, 'UTF-8');
-
-    $donnees['id'] = $id;
-
-    return formatString($config['templates']['article_formulaire'], $donnees);
-}
-
-
-//
-function affiche_liste_modifier_suprimer()
-{
-    global $config;
-    $db = connection();
-
-    // ETIQUETTES
-    $req = $db->prepare('
-        SELECT id, nom, description_courte
-        FROM jejeu_etiquettes
-        ');
-    $req->execute();
-
-    $etiquettes = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'element
-        $tplt = $config['templates']['lien_etiquette'];
-        $tplt .= ' <a href=admin.php?action=suprimeretiquette&id={{id}}&submit>SUPRIMER</a> ';
-        $tplt .= ' <a href=admin.php?action=modifieretiquette&id={{id}}>MODIFIER</a> ';
-        $lien = formatString($tplt, $donnees);
-        $etiquettes .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // JEUX
-    $req = $db->prepare('
-    SELECT id, nom, description_courte
-    FROM jejeu_jeux
-    ');
-    $req->execute();
-
-    $jeux = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'element
-        $tplt = $config['templates']['lien_jeu'];
-        $tplt .= ' <a href=admin.php?action=suprimerjeu&id={{id}}&submit>SUPRIMER</a> ';
-        $tplt .= ' <a href=admin.php?action=modifierjeu&id={{id}}>MODIFIER</a> ';
-        $lien = formatString($tplt, $donnees);
-        $jeux .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // ARTICLES
-    $req = $db->prepare('
-    SELECT id, nom, description_courte
-    FROM jejeu_articles
-    ');
-    $req->execute();
-
-    $articles = "";
-    while ($donnees = $req->fetch())
-    {   
-        // Formate et ajoute l'element
-        $tplt = $config['templates']['lien_article'];
-        $tplt .= ' <a href=admin.php?action=suprimerarticle&id={{id}}&submit>SUPRIMER</a> ';
-        $tplt .= ' <a href=admin.php?action=modifierarticle&id={{id}}>MODIFIER</a> ';
-        $lien = formatString($tplt, $donnees);
-        $jeux .= formatString($config['templates']['li'], ['element' => $lien]);
-    }
-    $req->closeCursor(); 
-
-    // Formate et affiche la liste
-
-    $listes = 'jeux:' . formatString($config['templates']['ul'],['elements' => $jeux]) ;
-    $listes .= 'etiquettes:'. formatString($config['templates']['ul'],['elements' => $etiquettes]);
-    $listes .= 'articles:'. formatString($config['templates']['ul'],['elements' => $articles]);
-    return $listes;
+    return formatString($config['templates']['formulaire_' . $type], $donnees);
 }
 
 
 
-
-
-///////////////////////////////////
 ///////////////////////////////////
 ///////// SUBMIT //////////////////
 ///////////////////////////////////
 
 // Soumet un formulaire (admin)
-function submit($action, $p)
+function submit($action, $categorie, $p)
 {
-    $db = connection();
 
-    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    global $config;
+    $db = connection();
+    $type = substr($categorie, 0, -1);
+    $table = 'jejeu_' . $categorie;
+    if (isset($_GET['id']) && is_numeric($_GET['id']))
+    {
 
         // SUPRIMER /////////////
-        // jeu
-        if($action == 'suprimerjeu'){
+        if($action == 'suprimer')
+        {
             $req = $db->prepare('
-                DELETE FROM  jejeu_jeux
-                WHERE id=?
+                DELETE FROM ' . $table
+                . ' WHERE id=?
                 ');
             $req->execute(array($_GET['id']));
-            echo "Bye bye le jeu numéro " . $_GET['id'];
-        }
-        // etiquette
-        elseif($action == 'suprimeretiquette'){
-            $req = $db->prepare('
-                DELETE FROM  jejeu_etiquettes
-                WHERE id=?
-                ');
-            $req->execute(array($_GET['id']));
-            echo "Bye bye l'etiquette numéro " . $_GET['id'];
-
-        }
-        // article
-        elseif($action == 'suprimerarticle'){
-            $req = $db->prepare('
-                DELETE FROM  jejeu_articles
-                WHERE id=?
-                ');
-            $req->execute(array($_GET['id']));
-            echo "Bye bye l'article numéro " . $_GET['id'];
-
+            echo "Bye bye " . $type . " numéro " . $_GET['id'];
         }
         // MODIFIER /////////////
-        // jeu
-        elseif($action == 'nouveaujeu'){
+        elseif($action == 'update')
+        {
             // modifier
             $req = $db->prepare('
-                UPDATE  jejeu_jeux
-                SET description_longue = :description_longue, nom = :nom, description_courte = :description_courte
+                UPDATE  '.$table
+                . ' SET description_longue = :description_longue, nom = :nom, description_courte = :description_courte
                 WHERE id=:id
                 ');
             $req->execute(array(
@@ -441,142 +309,81 @@ function submit($action, $p)
                 'description_courte' => $p['description_courte'],
                 'description_longue' => $p['description_longue']
             ));
-            // suprimer etiquetttes/jeux relations
-            $req = $db->prepare('
-                DELETE FROM  jejeu_jeux_etiquettes
-                WHERE id_jeu=?
-            ');
-            $req->execute(array($_GET['id']));
-            // recreer etiquetttes/jeux relations
-            if(isset($p['etiquettes'])){
-                foreach ($p['etiquettes'] as $id_etiquette) {
-                $req =connection()->prepare('
-                    INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
-                    VALUES(:id_etiquette, :id_jeu)');
-                $req->execute(array(
-                    'id_etiquette' => $id_etiquette,
-                    'id_jeu' => $_GET['id']));
+            if ($categorie != 'articles')
+            {
+                $rel_categorie = ($categorie == 'jeux') ? 'etiquettes' : 'jeux';
+                $rel_type = ($type == 'jeu') ? 'etiquette' : 'jeu';
+                // suprimer etiquetttes/jeux relations
+                $req = $db->prepare('
+                    DELETE FROM  jejeu_jeux_etiquettes
+                    WHERE id_'.$type.'=?
+                ');
+                $req->execute(array($_GET['id']));
+                // recreer etiquetttes/jeux relations
+                if(isset($p[$rel_categorie]))
+                {
+                    foreach ($p[$rel_categorie] as $rel_id)
+                    {
+                        $req =connection()->prepare('
+                            INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
+                            VALUES(:id_etiquette, :id_jeu)');
+                        $req->execute(array(
+                            'id_' . $rel_type => $rel_id,
+                            'id_' . $type => $_GET['id']));
+                    }
                 }
             }
-            echo "J'ai l'impression que la modif a bien eu lieu..";
-
+            echo "J'ai l'impression que la modif a bien eu lieu..<br/>"
+                . formatString($config['templates']['lien'], array(
+                    "id" => $_GET['id'],
+                    "type" => $type,
+                    "nom" => $p['nom'],
+                    "description_courte" => $p['description_courte'],
+                )
+            );
         }
-        // etiquette
-        elseif($action == 'nouvelleetiquette'){
-            // modifier
-            $req = $db->prepare('
-                UPDATE  jejeu_etiquettes
-                SET description_longue = :description_longue, nom = :nom, description_courte= :description_courte
-                WHERE id=:id
-                ');
-            $req->execute(array(
-                'id' => $_GET['id'],
-                'nom' => $p['nom'],
-                'description_courte' => $p['description_courte'],
-                'description_longue' => $p['description_longue']
-            ));
-            // suprimer etiquetttes/jeux relations
-            $req = $db->prepare('
-                DELETE FROM  jejeu_jeux_etiquettes
-                WHERE id_etiquette=?
-            ');
-            $req->execute(array($_GET['id']));
-            // recreer etiquetttes/jeux relations
-            if(isset($p['jeux'])){
-                foreach ($p['jeux'] as $id_jeu) {
+    }
+    // NOUVEAU //////////////////////////
+    elseif ($action == 'update') {
+        $req =$db->prepare('
+            INSERT INTO '.$table.'(nom, description_courte, description_longue)
+            VALUES(:nom, :description_courte, :description_longue)');
+        $req->execute(array(
+            'nom' => $p['nom'],
+            'description_courte' => $p['description_courte'],
+            'description_longue' => $p['description_longue']
+        ));
+        $id = $db->lastInsertId();
+        if ($categorie != 'articles')
+        {
+            $rel_categorie = ($categorie == 'jeux') ? 'etiquettes' : 'jeux';
+            $rel_type = ($type == 'jeu') ? 'etiquette' : 'jeu';
+            // Creer relation etiquette/jeu
+            if(isset($p[$rel_categorie]))
+            {
+                foreach ($p[$rel_categorie] as $rel_id)
+                {
                     $req =connection()->prepare('
                         INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
                         VALUES(:id_etiquette, :id_jeu)');
                     $req->execute(array(
-                        'id_etiquette' => $_GET['id'],
-                        'id_jeu' => $id_jeu));
+                        'id_' . $rel_type => $rel_id,
+                        'id_' . $type => $_GET['id']));
                 }
-                echo "J'ai l'impression que la modif s'est bien passée..";
-
             }
-        }
-        // article
-        elseif($action == 'nouvelarticle'){
-            // modifier
-            $req = $db->prepare('
-                UPDATE  jejeu_articles
-                SET description_longue = :description_longue, nom = :nom, description_courte= :description_courte
-                WHERE id=:id
-                ');
-            $req->execute(array(
-                'id' => $_GET['id'],
-                'nom' => $p['nom'],
-                'description_courte' => $p['description_courte'],
-                'description_longue' => $p['description_longue']
-                ));
-        }
- 
-
-    }
-    // NOUVEAU //////////////////////////
-
-    //jeu
-    elseif ($action == 'nouveaujeu') {
-        $req =$db->prepare('
-            INSERT INTO jejeu_jeux(nom, description_courte, description_longue)
-            VALUES(:nom, :description_courte, :description_longue)');
-        $req->execute(array(
-            'nom' => $p['nom'],
-            'description_courte' => $p['description_courte'],
-            'description_longue' => $p['description_longue']
-        ));
-        $id_jeu = $db->lastInsertId();
-        if(isset($p['etiquettes'])){
-            foreach ($p['etiquettes'] as $id_etiquette) {
-            $req =connection()->prepare('
-                INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
-                VALUES(:id_etiquette, :id_jeu)');
-            $req->execute(array(
-                'id_etiquette' => $id_etiquette,
-                'id_jeu' => $id_jeu));
-        }
 
         }
-        echo "Ça a l'air de s'être bien passé";
-    }
-    //etiquette
-    elseif ($action == 'nouvelleetiquette') {
-        $req =$db->prepare('
-            INSERT INTO jejeu_etiquettes(nom, description_courte, description_longue)
-            VALUES(:nom, :description_courte, :description_longue)');
-        $req->execute(array(
-            'nom' => $p['nom'],
-            'description_courte' => $p['description_courte'],
-            'description_longue' => $p['description_longue']
-        ));
-        $id_etiquette = $db->lastInsertId();
-        if(isset($p['jeux'])){
-            foreach ($p['jeux'] as $id_jeu) {
-                $req =connection()->prepare('
-                    INSERT INTO jejeu_jeux_etiquettes(id_etiquette, id_jeu)
-                    VALUES(:id_etiquette, :id_jeu)');
-                $req->execute(array(
-                    'id_etiquette' => $id_etiquette,
-                    'id_jeu' => $id_jeu));
-            }
-        }
-        echo 'Je pense que ça devrai être bon !';
-    }
-    //etiquette
-    elseif ($action == 'nouvelarticle') {
-        $req =$db->prepare('
-            INSERT INTO jejeu_articles(nom, description_courte, description_longue)
-            VALUES(:nom, :description_courte, :description_longue)');
-        $req->execute(array(
-            'nom' => $p['nom'],
-            'description_courte' => $p['description_courte'],
-            'description_longue' => $p['description_longue']
-        ));
-        echo 'Je pense que ça devrai être bon !';
+        echo "Ça a l'air de s'être bien passé <br/>"
+            . formatString($config['templates']['lien'], array(
+                "id" => $_GET['id'],
+                "type" => $type,
+                "nom" => $p['nom'],
+                "description_courte" => $p['description_courte'],
+            )
+        );
     }
     else
     {
         echo 'Oups ! une erreur de type chelou...';
     }
 }
-
