@@ -1,0 +1,14 @@
+<h2>Creer/modifier article</h2> 
+<form action='admin.php?action=update&categorie=articles&id={{id}}&submit' method='post'>
+    <label>Nom:</label>
+    <input type='text' name='nom' value='{{nom}}' size='50'>
+    <label>Description courte: </label>
+    <input type='text' name='description_courte' value='{{description_courte}}' size='100'>
+    <label>Description longue: </label>
+    <textarea name='description_longue' id='description_longue'>{{description_longue}}</textarea>
+    <script type='text/javascript'>
+        var editor = new Editor({element: document.getElementById('description_longue')});
+        editor.render();
+    </script>
+    <input type='submit' value='Je valide !'>
+</form> 

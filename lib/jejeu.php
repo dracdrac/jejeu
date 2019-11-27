@@ -333,7 +333,7 @@ function submit($action, $categorie, $p)
                     }
                 }
             }
-            echo "J'ai l'impression que la modif a bien eu lieu..<br/>"
+            echo "J'ai l'impression que la modif a bien eu lieu..<br/> Voir la modif ===> "
                 . formatString($config['templates']['lien'], array(
                     "id" => $_GET['id'],
                     "type" => $type,
@@ -373,7 +373,7 @@ function submit($action, $categorie, $p)
             }
 
         }
-        echo "Ça a l'air de s'être bien passé <br/>"
+        echo "Ça a l'air de s'être bien passé <br/> Voir la modif ===> "
             . formatString($config['templates']['lien'], array(
                 "id" => $_GET['id'],
                 "type" => $type,

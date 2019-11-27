@@ -9,6 +9,7 @@
       <li><a href="admin.php?action=update&categorie=etiquettes">Nouvelle etiquette</a></li>
       <li><a href="admin.php?action=update&categorie=articles">Nouvel article</a></li>
       <li><a href="admin.php?action=listes_administrables">Modifier / Suprimer</a></li>
+      <li><a href="fileupload.php">Uploader des images</a></li>
     </ul>
 
 <?php

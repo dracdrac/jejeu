@@ -23,6 +23,7 @@
         "lien" => file_get_contents('template/lien.html'),
         "check" => file_get_contents('template/check.html'),
         "administrable" => file_get_contents('template/administrable.html'),
+        "image_admin" => file_get_contents('template/image_admin.html'),
 
 
         // ADMIN
