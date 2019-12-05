@@ -28,6 +28,9 @@ function connection()
 ///////// AFFICHAGE ///////////////
 ///////////////////////////////////
 
+function generer_lien_modifier($categorie, $id){
+    return "admin.php?action=update&categorie=" . $categorie . "&id=" . $id;
+}
 
 function affiche_page($categorie, $id=NULL)
 {
