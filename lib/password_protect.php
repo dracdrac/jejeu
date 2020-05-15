@@ -94,22 +94,33 @@ function showLoginPasswordProtect($error_msg) {
 ?>
 <html>
 <head>
-  <title>Please enter password to access this page</title>
+  <title>Mot de passe s'il te plait.</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/webfonts/font.css">
+
   <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
   <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
 </head>
 <body>
-  <style>
-    input { border: 1px solid black; }
-  </style>
-  <div style="width:500px; margin-left:auto; margin-right:auto; text-align:center">
-  <form method="post">
-    <h3>Please enter password to access this page</h3>
-    <font color="red"><?php echo $error_msg; ?></font><br />
-<?php if (USE_USERNAME) echo 'Login:<br /><input type="input" name="access_login" /><br />Password:<br />'; ?>
-    <input type="password" name="access_password" /><p></p><input type="submit" name="Submit" value="Submit" />
+
+  <div id="content">
+
+  <h2>Le mot de passe.</h2>
+
+  <form method="post" style="margin-left:auto; margin-right:auto; text-align:center">
+
+    <p color="red"><?php echo $error_msg; ?></p>
+    Login:<br />
+    <input type="input" name="access_login" /><br />
+    Password:<br />
+    <input type="password" name="access_password" /><br />
+    <input type="submit" name="Submit" value="Submit" />
+
   </form>
-  <br />
+
+  <p>En fait n'importe qui peut pas modifier le site comme il veut, on est pas sur wikipedia. Faut un mot de passe. Et le mot de passe c'est que Louis et Léon qui le connaissent.</p>
+  <p><a href="/">Si tu veux retourner sur jejeu tu peux cliquer sur ce lien</a></p>
   <a style="font-size:9px; color: #B0B0B0; font-family: Verdana, Arial;" href="http://www.zubrag.com/scripts/password-protect.php" title="Download Password Protector">Powered by Password Protect</a>
   </div>
 </body>

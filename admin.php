@@ -3,13 +3,15 @@
     include("lib/password_protect.php");
     require('template/header.php');
 ?>
-    <h2>Administration du site <small>(Le genre d'endroit méga secret)</small></h2>
+    <h2>Administration du site </h2>
+    <small>(Le genre d'endroit méga secret)</small>
     <ul class="nav">
       <li><a href="admin.php?action=update&categorie=jeux">Nouveau jeu</a></li>
       <li><a href="admin.php?action=update&categorie=etiquettes">Nouvelle etiquette</a></li>
       <li><a href="admin.php?action=update&categorie=articles">Nouvel article</a></li>
       <li><a href="admin.php?action=listes_administrables">Modifier / Suprimer</a></li>
       <li><a href="fileupload.php">Uploader des images</a></li>
+      <li><a href="counter/view.php">Vues</a></li>
     </ul>
 
 <?php
